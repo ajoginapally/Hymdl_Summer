@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  # Training service - used for model training and data collection
+  terraform-training:
+    build:
+      context: .
+      target: training
+    container_name: terraform-training
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./logs:/app/logs
+      - ./cache:/app/cache
+      - ~/.gitconfig:/root/.gitconfig:ro  # For git operations
+    environment:
+      - PYTHONPATH=/app
+      - TRANSFORMERS_CACHE=/app/cache/transformers
+      - HF_HOME=/app/cache/huggingface
+      - WANDB_DISABLED=true  # Disable wandb in container by default
+    command: ["python", "scripts/pipeline.py", "--phase", "full", "--max-repos", "50"]
+    restart: "no"
+    profiles:
+      - training
+
+  # API service - serves the trained model
+  terraform-api:
+    build:
+      context: .
+      target: production
+    container_name: terraform-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models:ro  # Read-only model directory
+      - ./logs:/app/logs
+    environment:
+      - PYTHONPATH=/app
+      - TRANSFORMERS_CACHE=/app/cache/transformers
+      - HF_HOME=/app/cache/huggingface
+    command: ["python", "server/api.py", "--host", "0.0.0.0", "--port", "8000"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    depends_on:
+      - terraform-training
+    profiles:
+      - api
+      - production
+
+  # Monitoring service (optional)
+  terraform-monitor:
+    image: prom/prometheus:latest
+    container_name: terraform-monitor
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  # Redis cache (optional, for caching predictions)
+  redis:
+    image: redis:7-alpine
+    container_name: terraform-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    profiles:
+      - cache
+      - production
+
+volumes:
+  redis-data:
+    driver: local
+
+networks:
+  default:
+    name: terraform-network
+    driver: bridge

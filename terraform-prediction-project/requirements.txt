@@ -1,0 +1,48 @@
+# Core ML and Training Dependencies
+torch>=2.0.0
+transformers>=4.35.0
+datasets>=2.14.0
+accelerate>=0.24.0
+bitsandbytes>=0.41.0
+peft>=0.6.0
+trl>=0.7.0
+
+# Data Processing
+pandas>=1.5.0
+numpy>=1.24.0
+jsonlines>=3.1.0
+zstandard>=0.21.0
+pyarrow>=12.0.0
+
+# Web Scraping and GitHub API
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+GitPython>=3.1.0
+PyGithub>=1.59.0
+
+# Utilities and Monitoring
+wandb>=0.15.0
+tqdm>=4.65.0
+python-dotenv>=1.0.0
+colorama>=0.4.6
+rich>=13.0.0
+
+# Development and Testing
+pytest>=7.4.0
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.5.0
+
+# Azure Support
+azure-identity>=1.14.0
+azure-mgmt-resource>=23.0.0
+azure-storage-blob>=12.18.0
+
+# HCL Parsing
+python-hcl2>=4.3.0
+pyhcl>=0.4.4
+
+# Additional Utilities
+psutil>=5.9.0
+memory-profiler>=0.61.0
+schedule>=1.2.0
